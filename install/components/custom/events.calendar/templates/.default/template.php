@@ -54,7 +54,8 @@ foreach ($arResult["ITEMS"] as $arItem) {
     }
 }
 $years = array_unique($years);
-$years[] = date('Y');
+// $years[] = date('Y');
+$years[] = 'Все года';
 $years = array_unique($years);
 rsort($years);
 
@@ -83,9 +84,9 @@ window.calendarEvents = [
     ?>
     {
         id: <?=json_encode($arItem['ID'])?>,
-        title: <?=json_encode($arItem['NAME'])?>,
+        title: <?=json_encode(htmlspecialchars_decode($arItem['NAME']))?>,
         start: <?=json_encode($dateFormatted)?>,
-        description: <?=json_encode($arItem['PREVIEW_TEXT'])?>,
+        description: <?=json_encode(htmlspecialchars_decode($arItem['PREVIEW_TEXT']))?>,
         image: <?=json_encode(CFile::GetPath($arItem['PREVIEW_PICTURE']))?>,
         year: <?=json_encode($year)?>
     },
@@ -229,7 +230,6 @@ window.calendarEvents = [
 </div>
             
 
-<!-- Добавьте перед </body> -->
 <div class="l-calendar__modal" id="calendarModal" style="display:none;">
     <div class="l-calendar__overlay"></div>
 

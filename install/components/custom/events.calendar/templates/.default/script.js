@@ -53,23 +53,79 @@ document.addEventListener('DOMContentLoaded', function() {
 
     calendar.render();
 
+    updateCalendarDate();
     highlightTodayInAllYears();
+    setTimeout(hideOtherMonthRows, 0);
 
     calendar.on('datesSet', function() {
         highlightTodayInAllYears();
+        setTimeout(hideOtherMonthRows, 0);
     });
+
+    // function updateHeaderTitle() {
+    //     var date = calendar.getDate();
+    //     var month = date.getMonth();
+    //     var year = date.getFullYear();
+    //     headerTitle.textContent = monthNames[month] + ' ' + year;
+    // }
 
     function updateHeaderTitle() {
         var date = calendar.getDate();
         var month = date.getMonth();
-        var year = date.getFullYear();
-        headerTitle.textContent = monthNames[month] + ' ' + year;
+        var yearValue = yearSelect.value;
+        
+        if (yearValue === 'Все года') {
+            headerTitle.textContent = monthNames[month] + ' (Все года)';
+        } else {
+            headerTitle.textContent = monthNames[month] + ' ' + date.getFullYear();
+        }
     }
     
     function updateCalendarDate() {
-        var year = parseInt(yearSelect.value, 10);
+        var yearValue = yearSelect.value;
         var month = parseInt(monthSelect.value, 10) - 1;
-        calendar.gotoDate(new Date(year, month, 1));
+        
+        // Если выбран "Все года", показываем все события в текущем году
+        if (yearValue === 'Все года') {
+            var currentYear = new Date().getFullYear();
+            calendar.gotoDate(new Date(currentYear, month, 1));
+            
+            // Модифицируем события - устанавливаем их в текущий год, но сохраняем оригинальный год в extendedProps
+            var modifiedEvents = (window.calendarEvents || []).map(function(event) {
+                if (!event.start) return event;
+                
+                var parts = event.start.split('-');
+                var originalYear = parts[0];
+                var month = parts[1];
+                var day = parts[2];
+                
+                return {
+                    ...event,
+                    start: currentYear + '-' + month + '-' + day,
+                    extendedProps: {
+                        originalYear: originalYear,
+                        originalStart: event.start
+                    }
+                };
+            });
+            
+            calendar.setOption('events', modifiedEvents);
+        } else {
+            var year = parseInt(yearValue, 10);
+            calendar.gotoDate(new Date(year, month, 1));
+            
+            // Показываем события только для выбранного года
+            var filteredEvents = (window.calendarEvents || []).filter(function(event) {
+                if (!event.start) return false;
+                var eventYear = parseInt(event.start.split('-')[0], 10);
+                return eventYear === year;
+            });
+            
+            calendar.setOption('events', filteredEvents);
+        }
+
+        console.log(window.calendarEvents)
+        
         updateHeaderTitle();
         frameIsInViewport();
     }
@@ -77,30 +133,65 @@ document.addEventListener('DOMContentLoaded', function() {
     function syncSelectsWithCalendar() {
         var date = calendar.getDate();
         monthSelect.value = (date.getMonth() + 1).toString();
-        yearSelect.value = date.getFullYear().toString();
+        
+        // Не меняем год в селекте если выбрано "Все года"
+        if (yearSelect.value !== 'Все года') {
+            yearSelect.value = date.getFullYear().toString();
+        }
+        
         updateHeaderTitle();
     }
+
+    // function updateCalendarDate() {
+    //     var year = parseInt(yearSelect.value, 10);
+    //     var month = parseInt(monthSelect.value, 10) - 1;
+    //     calendar.gotoDate(new Date(year, month, 1));
+    //     updateHeaderTitle();
+    //     frameIsInViewport();
+    // }
+
+    // function syncSelectsWithCalendar() {
+    //     var date = calendar.getDate();
+    //     monthSelect.value = (date.getMonth() + 1).toString();
+    //     yearSelect.value = date.getFullYear().toString();
+    //     updateHeaderTitle();
+    // }
 
     monthSelect.addEventListener('change', function() {
         updateCalendarDate();
         animateCalendar();
+        setTimeout(hideOtherMonthRows, 100);
     });
     yearSelect.addEventListener('change', function() {
+        if (this.value === 'Все года') {
+            // При выборе "Все года" обновляем заголовок
+            var date = calendar.getDate();
+            var month = date.getMonth();
+            headerTitle.textContent = monthNames[month] + ' (Все года)';
+        }
         updateCalendarDate();
         animateCalendar();
+        setTimeout(hideOtherMonthRows, 100);
     });
+    // yearSelect.addEventListener('change', function() {
+    //     updateCalendarDate();
+    //     animateCalendar();
+    //     setTimeout(hideOtherMonthRows, 100);
+    // });
 
     prevBtn.addEventListener('click', function() {
         calendar.prev();
         syncSelectsWithCalendar();
         animateCalendar();
         frameIsInViewport();
+        setTimeout(hideOtherMonthRows, 100);
     });
     nextBtn.addEventListener('click', function() {
         calendar.next();
         syncSelectsWithCalendar();
         animateCalendar();
         frameIsInViewport();
+        setTimeout(hideOtherMonthRows, 100);
     });
 
     function frameIsInViewport() {
@@ -118,7 +209,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 var month = parseInt(parts[1], 10);
                 var day = parseInt(parts[2], 10);
 
-                var events = getEventsByYear(day, month, year);
+                var yearValue = yearSelect.value;
+                var events;
+
+                if (yearValue === 'Все года') {
+                    events = getEventsByDayMonth(day, month);
+                } else {
+                    events = getEventsByYear(day, month, year);
+                }
+
                 if (!events.length) return;
 
                 var currentEvent = getEventByDate(dateStr);
@@ -127,6 +226,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else {
                     showModalForDay(day, month, year, events[0].id, dateStr);
                 }
+
+                console.log('Clicked date:', dateStr, currentEvent, { day, month, year});
             });
 
         });
@@ -139,10 +240,64 @@ document.addEventListener('DOMContentLoaded', function() {
         container.classList.add('l-calendar-animate');
     }
 
+    function hideOtherMonthRows() {
+        const rows = document.querySelectorAll('.fc-daygrid-body tr');
+        
+        rows.forEach(row => {
+            const dayCells = row.querySelectorAll('.fc-daygrid-day');
+            let allOtherMonth = true;
+            
+            // Проверяем каждый день в строке
+            dayCells.forEach(cell => {
+                if (!cell.classList.contains('fc-day-other')) {
+                    allOtherMonth = false;
+                }
+            });
+            
+            // Если все дни в строке из другого месяца - скрываем строку
+            if (allOtherMonth) {
+                row.style.display = 'none';
+            } else {
+                row.style.display = '';
+            }
+        });
+    }
+
+    // function highlightTodayInAllYears() {
+    //     var today = new Date();
+    //     var todayMonth = today.getMonth() + 1;
+    //     var todayDay = today.getDate();
+
+    //     var eventDates = (window.calendarEvents || []).map(function(ev) {
+    //         return ev.start;
+    //     });
+
+    //     document.querySelectorAll('.fc-daygrid-day').forEach(function(cell) {
+    //         var dateStr = cell.getAttribute('data-date');
+    //         if (dateStr) {
+    //             var parts = dateStr.split('-');
+    //             var cellMonth = parseInt(parts[1], 10);
+    //             var cellDay = parseInt(parts[2], 10);
+    //             if (cellMonth === todayMonth && cellDay === todayDay) {
+    //                 cell.classList.add('fc-day-today');
+    //             } else {
+    //                 cell.classList.remove('fc-day-today');
+    //             }
+
+    //             if (eventDates.includes(dateStr)) {
+    //                 cell.classList.add('fc-custom-has-events');
+    //             } else {
+    //                 cell.classList.remove('fc-custom-has-events');
+    //             }
+    //         }
+    //     });
+    // }
+
     function highlightTodayInAllYears() {
         var today = new Date();
         var todayMonth = today.getMonth() + 1;
         var todayDay = today.getDate();
+        var yearValue = yearSelect.value;
 
         var eventDates = (window.calendarEvents || []).map(function(ev) {
             return ev.start;
@@ -154,16 +309,33 @@ document.addEventListener('DOMContentLoaded', function() {
                 var parts = dateStr.split('-');
                 var cellMonth = parseInt(parts[1], 10);
                 var cellDay = parseInt(parts[2], 10);
+                
                 if (cellMonth === todayMonth && cellDay === todayDay) {
                     cell.classList.add('fc-day-today');
                 } else {
                     cell.classList.remove('fc-day-today');
                 }
 
-                if (eventDates.includes(dateStr)) {
-                    cell.classList.add('fc-custom-has-events');
+                // В режиме "Все года" проверяем совпадение по дню и месяцу
+                if (yearValue === 'Все года') {
+                    var hasEvent = eventDates.some(function(eventDate) {
+                        var eventParts = eventDate.split('-');
+                        return parseInt(eventParts[1], 10) === cellMonth && 
+                            parseInt(eventParts[2], 10) === cellDay;
+                    });
+                    
+                    if (hasEvent) {
+                        cell.classList.add('fc-custom-has-events');
+                    } else {
+                        cell.classList.remove('fc-custom-has-events');
+                    }
                 } else {
-                    cell.classList.remove('fc-custom-has-events');
+                    // В обычном режиме проверяем полное совпадение даты
+                    if (eventDates.includes(dateStr)) {
+                        cell.classList.add('fc-custom-has-events');
+                    } else {
+                        cell.classList.remove('fc-custom-has-events');
+                    }
                 }
             }
         });
@@ -173,12 +345,35 @@ document.addEventListener('DOMContentLoaded', function() {
     updateHeaderTitle();
     animateCalendar();
 
+    // function getEventsByDayMonth(day, month) {
+    //     return (window.calendarEvents || []).filter(function(ev) {
+    //         if (!ev.start) return false;
+    //         var parts = ev.start.split('-');
+    //         return parseInt(parts[1], 10) === month && parseInt(parts[2], 10) === day;
+    //     });
+    // }
+
     function getEventsByDayMonth(day, month) {
-        return (window.calendarEvents || []).filter(function(ev) {
-            if (!ev.start) return false;
-            var parts = ev.start.split('-');
-            return parseInt(parts[1], 10) === month && parseInt(parts[2], 10) === day;
-        });
+        var yearValue = yearSelect.value;
+        
+        if (yearValue === 'Все года') {
+            // В режиме "Все года" ищем события по оригинальным датам
+            return (window.calendarEvents || []).filter(function(ev) {
+                if (!ev.start) return false;
+                var parts = ev.start.split('-');
+                return parseInt(parts[1], 10) === month && parseInt(parts[2], 10) === day;
+            });
+        } else {
+            // В обычном режиме фильтруем по году
+            var year = parseInt(yearValue, 10);
+            return (window.calendarEvents || []).filter(function(ev) {
+                if (!ev.start) return false;
+                var parts = ev.start.split('-');
+                return parseInt(parts[0], 10) === year && 
+                    parseInt(parts[1], 10) === month && 
+                    parseInt(parts[2], 10) === day;
+            });
+        }
     }
 
     function getEventByDate(dateStr) {
@@ -208,7 +403,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showModalForDay(day, month, year, id, dateStr) {
-        var events = getEventsByDayMonth(day, month);
+        var yearValue = yearSelect.value;
+        var events;
+
+        console.log('showModalForDay called with:', { day, month, year, id, dateStr, yearValue });
+        
+        if (yearValue === 'Все года') {
+            // В режиме "Все года" используем оригинальные события
+            events = getEventsByDayMonth(day, month);
+        } else {
+            events = getEventsByYear(day, month, year);
+        }
+        
         if (!events.length) return;
 
         window.currentDaySlides = events.map(function(ev) {
@@ -217,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 img: ev.image || '',
                 title: ev.title || '',
                 year: ev.year || '',
-                date: ev.start,
+                date: ev.start, // Используем оригинальную дату
                 description: ev.description || ''
             };
         });
@@ -237,6 +443,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
         openDayModal(idx);
     }
+
+    // function showModalForDay(day, month, year, id, dateStr) {
+    //     var events = getEventsByDayMonth(day, month);
+    //     if (!events.length) return;
+
+    //     window.currentDaySlides = events.map(function(ev) {
+    //         return {
+    //             id: ev.id,
+    //             img: ev.image || '',
+    //             title: ev.title || '',
+    //             year: ev.year || '',
+    //             date: ev.start,
+    //             description: ev.description || ''
+    //         };
+    //     });
+
+    //     var idx = 0;
+    //     if (id) {
+    //         idx = window.currentDaySlides.findIndex(function(slide) {
+    //             return slide.id == id;
+    //         });
+    //         if (idx === -1) {
+    //             idx = window.currentDaySlides.findIndex(function(slide) {
+    //                 return slide.date === dateStr;
+    //             });
+    //         }
+    //         if (idx === -1) idx = 0;
+    //     }
+
+    //     openDayModal(idx);
+    // }
 
     function renderDaySlides() {
         slider.innerHTML = '';

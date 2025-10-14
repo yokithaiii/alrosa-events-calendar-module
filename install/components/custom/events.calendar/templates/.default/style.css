@@ -129,7 +129,7 @@
 
 .l-calendar__main {
     margin-top: 56px;
-    padding-bottom: 56px;
+    padding-bottom: 0;
 }
 
 .l-calendar__header {
@@ -302,6 +302,26 @@ select option:hover { background: #8DC8E8; }
 
 .fc .fc-day-other .fc-daygrid-day-frame {
     border-top: none !important;
+}
+
+.fc .fc-day-other .fc-daygrid-event.fc-h-event .fc-event-title {
+    display: none !important;
+}
+
+.fc-daygrid-event-harness::before {
+    clear: both;
+    content: "";
+    display: table;
+    border-bottom: 1px solid #000000;
+    width: 35%;
+    margin: 5px auto 3px;
+}
+
+.fc-day-other .fc-daygrid-event-harness::before {
+    display: none;
+}
+.fc-daygrid-event-harness:nth-child(1)::before {
+    display: none;
 }
 
 .fc .fc-custom-has-events .fc-daygrid-day-frame:hover {
