@@ -49,6 +49,16 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         height: 'auto',
         events: window.calendarEvents || [],
+        dayCellContent: function(info) {
+            var dayNumber = info.dayNumberText;
+            var day = parseInt(dayNumber.replace(/\D/g, ''));
+            var formattedDay = day < 10 ? '0' + day : day.toString();
+            
+            var el = document.createElement('div');
+            el.className = 'fc-daygrid-day-number';
+            el.textContent = formattedDay;
+            return { domNodes: [el] };
+        }
     });
 
     calendar.render();
