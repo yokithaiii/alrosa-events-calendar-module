@@ -282,8 +282,8 @@ select option:hover { background: #8DC8E8; }
 .fc .fc-daygrid-day-frame {
     border-top: 2px solid #212529 !important;
     width: 90%;
-    margin: 0 auto;
-    padding: 32px 16px; 
+    margin: 0 12px;
+    padding: 32px 0 42px 16px; 
     transition: all 0.5s ease;
     cursor: pointer;
     margin-bottom: 24px;
@@ -450,7 +450,7 @@ select option:hover { background: #8DC8E8; }
     position: relative; 
     background: #fff;
     min-width: 320px; 
-    max-width: 80vw; 
+    max-width: 1064px; 
     width: 100%;
     height: 674px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
@@ -460,7 +460,7 @@ select option:hover { background: #8DC8E8; }
 }
 
 .l-calendar__modal-content.__no-img {
-    max-width: 65vw; 
+    max-width: 1064px; 
 }
 
 .l-calendar__modal-content.__no-img .l-calendar__modal-left {
@@ -476,7 +476,7 @@ select option:hover { background: #8DC8E8; }
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 32px;
+    padding: 32px 32px 32px 64px;
 }
 
 .l-calendar__right-top {
@@ -504,6 +504,7 @@ select option:hover { background: #8DC8E8; }
 
 .l-calendar__right-bottom {
     padding: 0;
+    padding-right: 32px;
 }
 
 .l-calendar__modal-left {
@@ -652,13 +653,13 @@ select option:hover { background: #8DC8E8; }
 
 @media screen and (max-width: 1440px) {
     .fc-daygrid-event, .fc-h-event .fc-event-title {
-        -webkit-line-clamp: 3; 
+        -webkit-line-clamp: 5; 
     }
-    .fc .fc-daygrid-day-frame {
+    /* .fc .fc-daygrid-day-frame {
         min-height: 175px;
         padding: 15px 5px;
         margin-bottom: 10px;
-    }
+    } */
     .fc .fc-daygrid-body-natural .fc-daygrid-day-events {
         margin-top: 15px;
     }
@@ -712,6 +713,16 @@ select option:hover { background: #8DC8E8; }
     }
     .l-calendar__right-body {
         height: calc(100% - 76px);
+    }
+}
+
+@media screen and (max-width: 1200px) {
+    .fc-daygrid-event, .fc-h-event .fc-event-title {
+        -webkit-line-clamp: 3; 
+    }
+    .fc .fc-daygrid-day-frame {
+        min-height: 180px;
+        padding: 32px 0 32px 16px;
     }
 }
 

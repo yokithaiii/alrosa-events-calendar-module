@@ -54,8 +54,8 @@ foreach ($arResult["ITEMS"] as $arItem) {
     }
 }
 $years = array_unique($years);
-// $years[] = date('Y');
-$years[] = 'Все года';
+$years[] = date('Y');
+// $years[] = 'Все года';
 $years = array_unique($years);
 rsort($years);
 
