@@ -418,7 +418,7 @@ select option:hover { background: #8DC8E8; }
     overflow: hidden;
     text-overflow: ellipsis;
     max-height: 264px;
-    white-space: normal;
+    white-space: pre-line;
 }
 
 .fc .fc-daygrid-body-natural .fc-daygrid-day-events {

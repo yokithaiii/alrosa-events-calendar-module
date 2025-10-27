@@ -80,15 +80,23 @@ window.calendarEvents = [
         $date = $arItem['ACTIVE_FROM'];
         if ($year) {
             $dateFormatted = $year . '-' . date('m-d', strtotime(str_replace('.', '-', $date)));
+            $title = '<b style="
+    font-size: 16px;
+    font-weight: 800;
+">' .$year . "</b>" . "\n" . $arItem['NAME'];
+            // $title = $year . "\n" . $arItem['NAME'];
+        } else {
+            $title = $arItem['NAME'];
         }
+
     ?>
     {
         id: <?=json_encode($arItem['ID'])?>,
-        title: <?=json_encode(htmlspecialchars_decode($arItem['NAME']))?>,
+        title: <?=json_encode($title)?>,
         start: <?=json_encode($dateFormatted)?>,
         description: <?=json_encode(htmlspecialchars_decode($arItem['PREVIEW_TEXT']))?>,
         image: <?=json_encode(CFile::GetPath($arItem['PREVIEW_PICTURE']))?>,
-        year: <?=json_encode($year)?>
+        year: <?=json_encode(value: $year)?>
     },
 <?endforeach;?>
 ];
@@ -211,7 +219,7 @@ window.calendarEvents = [
                         <path d="M8.01973 11.9001L1.96973 5.85008L2.98973 4.83008L8.01973 9.86008L13.0097 4.87008L14.0297 5.88008L8.01973 11.9001Z" fill="#212529"/>
                     </svg>
                 </div>
-                <div class="l-calendar__filter-year">
+                <div class="l-calendar__filter-year" style="display: none">
                     <select name="year" id="year">
                         <?php foreach ($years as $year): ?>
                             <option value="<?=$year?>"<?=($year == date('Y') ? ' selected' : '')?>><?=$year?></option>

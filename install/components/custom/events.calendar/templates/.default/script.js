@@ -34,6 +34,15 @@ document.addEventListener('DOMContentLoaded', function() {
         filterYear.classList.remove('open');
     });
 
+    // --- сортировка событий по годам (от новых к старым) ---
+    if (window.calendarEvents && Array.isArray(window.calendarEvents)) {
+        window.calendarEvents.sort(function(a, b) {
+            const yearA = parseInt(a.year || 0);
+            const yearB = parseInt(b.year || 0);
+            return yearA - yearB; // по убыванию
+        });
+    }
+
     var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'ru',
@@ -49,6 +58,12 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         height: 'auto',
         events: window.calendarEvents || [],
+        eventDidMount: function(info) {
+            const titleEl = info.el.querySelector('.fc-event-title');
+            if (titleEl) {
+                titleEl.innerHTML = info.event.title;
+            }
+        },
         dayCellContent: function(info) {
             var dayNumber = info.dayNumberText;
             var day = parseInt(dayNumber.replace(/\D/g, ''));
@@ -82,7 +97,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // } else {
         //     headerTitle.textContent = monthNames[month] + ' ' + date.getFullYear();
         // }
-        headerTitle.textContent = monthNames[month] + ' ' + date.getFullYear();
+        // headerTitle.textContent = monthNames[month] + ' ' + date.getFullYear();
+        headerTitle.textContent = monthNames[month];
     }
     
     function updateCalendarDate() {
@@ -452,6 +468,19 @@ document.addEventListener('DOMContentLoaded', function() {
         nextModalBtn.querySelector('span').textContent = window.currentDaySlides[nextIdx].year || '';
 
         renderDayDots();
+
+        console.log(window.currentDaySlides)
+        // если только один слайд — скрываем навигацию
+        if (window.currentDaySlides.length <= 1) {
+            prevModalBtn.style.display = 'none';
+            nextModalBtn.style.display = 'none';
+            dotsContainer.style.display = 'none';
+        } else {
+            prevModalBtn.style.display = '';
+            nextModalBtn.style.display = '';
+            dotsContainer.style.display = '';
+        }
+
     }
 
     function openDayModal(startIdx) {
@@ -571,6 +600,17 @@ document.addEventListener('DOMContentLoaded', function() {
             slider.appendChild(slideDiv);
         });
         renderDots();
+
+        // если только один слайд — скрываем навигацию
+        // if (slidesData.length <= 1) {
+        //     prevModalBtn.style.display = 'none';
+        //     nextModalBtn.style.display = 'none';
+        //     dotsContainer.style.display = 'none';
+        // } else {
+        //     prevModalBtn.style.display = '';
+        //     nextModalBtn.style.display = '';
+        //     dotsContainer.style.display = '';
+        // }
 
         modalImg.src = slidesData[currentSlide].img || '';
         modalImg.style.display = slidesData[currentSlide].img ? '' : 'none';
